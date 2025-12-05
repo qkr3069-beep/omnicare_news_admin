@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>옴니케어 뉴스 브리핑</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" />
+  <style>
+    :root{
+      --brand-primary:#1f4fff;
+      --brand-primary-700:#1a3fd1;
+      --brand-primary-50:#eef2ff;
+      --brand-text:#0f172a;
+      --brand-muted:#64748b;
+      --brand-card:#ffffff;
+      --brand-divider:#e5e7eb;
+      --brand-radius:14px;
+      --brand-shadow:0 6px 18px rgba(31,79,255,0.08);
+    }
+    html,body{
+      font-family:"Pretendard Variable",Pretendard,sans-serif;
+    }
+    .brand-header{background:linear-gradient(90deg,var(--brand-primary),var(--brand-primary-700));}
+    .brand-btn{background:var(--brand-primary);color:#fff;padding:10px 18px;border-radius:9999px;font-weight:700;}
+    .brand-section-title{font-weight:800;border-left:6px solid var(--brand-primary);padding-left:10px;}
+    .brand-card{background:white;border-radius:var(--brand-radius);box-shadow:var(--brand-shadow);}
+    .brand-link{color:var(--brand-primary);font-weight:700;}
+    .badge-link{background:#ffffff2B;padding:6px 10px;border-radius:9999px;}
+    .brand-divider{border-top:1px dashed var(--brand-divider);}
+    input[type="date"]{color:black;}
+  </style>
+</head>
+<body class="bg-[var(--brand-primary-50)] text-[var(--brand-text)] min-h-screen">
+
+<header class="brand-header text-white">
+  <div class="max-w-6xl mx-auto px-5 py-5 flex flex-col lg:flex-row lg:justify-between gap-4">
+    <!-- 왼쪽 : 로고 + 타이틀 -->
+    <div class="flex flex-col items-start gap-0 text-left">
+      <img
+        src="https://postfiles.pstatic.net/MjAyNTA5MDVfMjU2/MDAxNzU3MDM1MzI5ODQ1.uqf71crOiDQYlLsoFGuIKzlASSUil46DsxNDebXlBcYg.wBc6WmhjLSfYDp6xPIF5sznkh50XOkMy-xq0k9GMTV8g.PNG/%EC%98%B4%EB%8B%88%EC%BC%80%EC%96%B4_%EB%A1%9C%EA%B3%A0.png?type=w966"
+        alt="옴니케어 로고"
+        class="h-16 object-contain"
+      />
+      <div class="flex gap-3 items-center flex-wrap">
+        <h1 class="text-xl lg:text-2xl font-extrabold">옴니케어 뉴스 브리핑</h1>
+        <a
+          href="https://www.korea.kr/"
+          target="_blank"
+          rel="noopener"
+          class="badge-link text-white font-bold text-sm"
+        >
+          정책브리핑 바로가기
+        </a>
+      </div>
+    </div>
+
+    <!-- 오른쪽 : 날짜 + 조회 + (아래줄) 선택 기사 저장 -->
+    <div class="flex flex-col items-end gap-2">
+      <div class="flex items-center gap-3">
+        <input
+          type="date"
+          id="datePicker"
+          class="px-3 py-2 rounded-xl bg-white text-black"
+        />
+        <button onclick="loadAllNews()" class="brand-btn">
+          조회
+        </button>
+      </div>
+
+      <!-- 날짜/조회 아래에 오는 버튼 -->
+      <button
+        onclick="saveSelectedNews()"
+        class="brand-btn bg-emerald-500 hover:bg-emerald-600"
+      >
+        선택 기사 저장
+      </button>
+    </div>
+  </div>
+</header>
+
+
+<main class="max-w-6xl mx-auto px-5 py-4 space-y-5">
+  <div class="brand-divider"></div>
+  <div id="news-container" class="space-y-4"></div>
+</main>
+
+<script>
+const API_BASE = 'https://script.google.com/macros/s/AKfycbzWBMIgpPqkxVSijQRiqsbYxR8DtFsQMLbZHwdCPzdJ9SGITNYS_sZ3VMqIGTCsI8Nx/exec'; 
+const feeds = {
+  "건강검진": "https://news.google.com/rss/search?q=건강검진&hl=ko&gl=KR&ceid=KR:ko",
+  "검진센터 소식": "https://news.google.com/rss/search?q=KMI+OR+한국의학연구소+OR+건강관리협회+OR+하나로의료재단+OR+메디플러스+OR+메디피아+OR+SCL+OR+세종365의원+OR+대청병원+OR+천안우리병원&hl=ko&gl=KR&ceid=KR:ko",
+  "경쟁사 소식": "https://news.google.com/rss/search?q=GC케어+OR+어떠케어+OR+에임매드+OR+착한의사+OR+비바이노베이션+OR+케어링크+OR+케어랩스+OR+레몬헬스케어+OR+유비케어+OR+살루스케어+OR+카카오헬스케어&hl=ko&gl=KR&ceid=KR:ko",
+  "헬스케어": "https://news.google.com/rss/search?q=헬스케어&hl=ko&gl=KR&ceid=KR:ko",
+  "웰니스": "https://news.google.com/rss/search?q=웰니스&hl=ko&gl=KR&ceid=KR:ko",
+  "웨어러블": "https://news.google.com/rss/search?q=갤럭시워치+OR+애플워치+OR+스마트워치+OR+핏빗+OR+워치&hl=ko&gl=KR&ceid=KR:ko",
+  "주요 소식(국내)": "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko",
+  "주요 소식(국외)": "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
+};
+
+const CATEGORY_KEYWORDS = {
+  "건강검진": ["건강검진","종합검진","대장내시경","암검진"],
+  "검진센터 소식": ["KMI","한국의학연구소","건강관리협회","하나로의료재단","메디플러스","메디피아","SCL","세종365의원","대청병원","천안우리병원"],
+  "경쟁사 소식": ["GC케어","어떠케어","에임매드","착한의사","비바이노베이션","케어링크","케어랩스","레몬헬스케어","유비케어","살루스케어","카카오헬스케어"],
+  "헬스케어": ["헬스케어","디지털헬스","원격의료"],
+  "웰니스": ["웰니스","비만","영양관리","운동습관"],
+  "웨어러블": ["갤럭시워치","애플워치","스마트워치","핏빗","웨어러블기기"]
+};
+
+const CATEGORY_NEGATIVE_KEYWORDS = {
+  "검진센터 소식": [
+    "해양","바다","항만","수산","해운","해사","해양수산부","한국해양수산개발원","우리바다"
+  ]
+};
+
+const TOP_PAGE = {
+  "주요 소식(국내)": "https://news.google.com/topstories?hl=ko&gl=KR&ceid=KR:ko",
+  "주요 소식(국외)": "https://news.google.com/topstories?hl=en-US&gl=US&ceid=US:en"
+};
+
+function buildMoreLink(cat){
+  if (TOP_PAGE[cat]) return TOP_PAGE[cat];
+  const terms = CATEGORY_KEYWORDS[cat];
+  if (!terms) return "#";
+  const q = terms.map(t=>`%22${encodeURIComponent(t)}%22`).join("%20OR%20");
+  return `https://news.google.com/search?q=${q}&hl=ko&gl=KR&ceid=KR%3Ako`;
+}
+
+function parseYMD(v){const[a,b,c]=v.split("-").map(Number);return new Date(a,b-1,c);}
+function isSameDate(dt,sel){return Math.abs((new Date(dt)-parseYMD(sel))/86400000)<=1;}
+
+async function fetchRSS(u){
+  const r=await fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u));
+  return r.json();
+}
+
+function renderSection(wrap, cat, items, selDate) {
+  let num = 0;
+  const sec = document.createElement("section");
+  sec.innerHTML = `
+    <div class="flex justify-between items-center mb-2">
+      <h2 class="brand-section-title text-xl">${cat}</h2>
+      <a href="${buildMoreLink(cat)}" target="_blank"
+         class="px-3 py-1 bg-[var(--brand-primary)] text-white rounded-md text-sm hover:bg-[var(--brand-primary-700)] transition">
+        더보기
+      </a>
+    </div>
+  `;
+
+  const positiveKeywords = CATEGORY_KEYWORDS[cat] || [];
+  const negativeKeywords = CATEGORY_NEGATIVE_KEYWORDS[cat] || [];
+
+  for (const it of (items || [])) {
+    if (num >= 5) break;
+    if (!isSameDate(it.pubDate, selDate)) continue;
+
+    const text = ((it.title || "") + " " + (it.description || "")).toLowerCase();
+
+    if (positiveKeywords.length > 0) {
+      const hasPositive = positiveKeywords.some(k =>
+        text.includes(k.toLowerCase())
+      );
+      if (!hasPositive) continue;
+    }
+
+    if (negativeKeywords.length > 0) {
+      const hasNegative = negativeKeywords.some(k =>
+        text.includes(k.toLowerCase())
+      );
+      if (hasNegative) continue;
+    }
+
+    const clean = (it.description || "").replace(/<[^>]+>/g, " ").slice(0, 60);
+    // 따옴표 깨지는 것만 막기 위해 간단히 처리
+    const safeTitle = (it.title || "").replace(/"/g, '&quot;');
+    const safeDesc  = clean.replace(/"/g, '&quot;');
+
+    sec.innerHTML += `
+      <div class="brand-card p-4 mt-2">
+        <label class="flex gap-3 items-start cursor-pointer">
+          <input type="checkbox"
+                 class="mt-1 article-checkbox"
+                 data-cat="${cat}"
+                 data-title="${safeTitle}"
+                 data-link="${it.link}"
+                 data-description="${safeDesc}"
+                 data-date="${it.pubDate}">
+          <div>
+            <a class="brand-link block mb-1" href="${it.link}" target="_blank">${it.title}</a>
+            <p class="text-sm brand-sub">${clean}...</p>
+          </div>
+        </label>
+      </div>
+    `;
+    num++;
+  }
+
+  if (num === 0) {
+    sec.innerHTML += `<p class="brand-sub">해당 날짜 소식 없음</p>`;
+  }
+
+  sec.innerHTML += `<div class="brand-divider mt-4 mb-6"></div>`;
+  wrap.appendChild(sec);
+}
+
+
+
+async function loadAllNews(){
+  const selDate=document.getElementById("datePicker").value;
+  const c=document.getElementById("news-container"); c.innerHTML="";
+  for(const [cat,url] of Object.entries(feeds)){
+    const d=await fetchRSS(url);
+    renderSection(c,cat,d.items,selDate);
+  }
+}
+
+window.onload=()=>{
+  document.getElementById("datePicker").value=new Date().toISOString().slice(0,10);
+  loadAllNews();
+};
+async function saveSelectedNews() {
+  const checked = document.querySelectorAll('.article-checkbox:checked');
+  const selected = [];
+
+  checked.forEach(chk => {
+    selected.push({
+      category: chk.dataset.cat,
+      title: chk.dataset.title,
+      link: chk.dataset.link,
+      description: chk.dataset.description,
+      pubDate: chk.dataset.date
+    });
+  });
+
+  const selDate = document.getElementById("datePicker").value;
+
+  // JSON을 payload라는 이름의 폼 데이터로 감싸기
+  const formData = new URLSearchParams();
+  formData.append('payload', JSON.stringify({
+    date: selDate,
+    items: selected
+  }));
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      // ❗ 헤더 안 넣기 (기본 form-encoded) → preflight 안 생김
+      body: formData
+    });
+
+    const text = await res.text();
+    console.log('응답 status:', res.status);
+    console.log('응답 body:', text);
+
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {
+      alert('서버 응답이 JSON 형식이 아닙니다.\n\n' + text.slice(0, 200));
+      return;
+    }
+
+    if (json.ok) {
+      alert("임직원에게 공유할 뉴스가 서버에 저장되었습니다.");
+    } else {
+      alert("저장 중 오류가 발생했습니다: " + (json.error || 'unknown'));
+    }
+  } catch (e) {
+    console.error(e);
+    alert("서버와 통신 중 오류가 발생했습니다.");
+  }
+}
+
+
+</script>
+</body>
+</html>

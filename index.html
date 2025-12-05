@@ -86,7 +86,7 @@
 </main>
 
 <script>
-const API_BASE = 'https://script.google.com/macros/s/AKfycbzWBMIgpPqkxVSijQRiqsbYxR8DtFsQMLbZHwdCPzdJ9SGITNYS_sZ3VMqIGTCsI8Nx/exec'; 
+const API_BASE = 'https://script.google.com/macros/s/AKfycbwGgD-o8tW8DEPfMC2R6A5y-mGpqtThvKJjbv4xQMantOL4TzvhubXFwWJMvzP8Ooqe/exec'; 
 const feeds = {
   "건강검진": "https://news.google.com/rss/search?q=건강검진&hl=ko&gl=KR&ceid=KR:ko",
   "검진센터 소식": "https://news.google.com/rss/search?q=KMI+OR+한국의학연구소+OR+건강관리협회+OR+하나로의료재단+OR+메디플러스+OR+메디피아+OR+SCL+OR+세종365의원+OR+대청병원+OR+천안우리병원&hl=ko&gl=KR&ceid=KR:ko",
@@ -218,6 +218,7 @@ window.onload=()=>{
   document.getElementById("datePicker").value=new Date().toISOString().slice(0,10);
   loadAllNews();
 };
+
 async function saveSelectedNews() {
   const checked = document.querySelectorAll('.article-checkbox:checked');
   const selected = [];
@@ -244,7 +245,7 @@ async function saveSelectedNews() {
   try {
     const res = await fetch(API_BASE, {
       method: 'POST',
-      // ❗ 헤더 안 넣기 (기본 form-encoded) → preflight 안 생김
+      // Content-Type 헤더 일부러 안 넣음 (기본 form-encoded)
       body: formData
     });
 
